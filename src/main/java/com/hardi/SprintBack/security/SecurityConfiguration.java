@@ -29,88 +29,63 @@ import java.util.Arrays;
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
-	@Autowired
-	private UserDetailsService userDetailsService;
+    @Autowired
+    private UserDetailsService userDetailsService;
 
-	@Autowired
-	public void configureAuthentication(
-			AuthenticationManagerBuilder authenticationManagerBuilder)
-			throws Exception {
+    @Autowired
+    public void configureAuthetication(
+            AuthenticationManagerBuilder authenticationManagerBuilder) throws  Exception{
+        authenticationManagerBuilder.userDetailsService(this.userDetailsService).passwordEncoder(passwordEncoder());
+    }
 
-		authenticationManagerBuilder
-				.userDetailsService(this.userDetailsService).passwordEncoder(passwordEncoder());
-	}
+    @Bean
+    public PasswordEncoder passwordEncoder(){
+        return  new BCryptPasswordEncoder();
+    }
 
-	@Bean
-	public PasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
-	}
+    @Bean
+    @Override
+    public AuthenticationManager authenticationManagerBean() throws Exception{
+        return  super.authenticationManagerBean();
+    }
 
-	@Bean
-	@Override
-	public AuthenticationManager authenticationManagerBean() throws Exception {
-		return super.authenticationManagerBean();
-	}
+    @Bean
+    public AuthenticationTokenFilter authenticationTokenFilterBean() throws Exception{
+        AuthenticationTokenFilter authenticationTokenFilter = new AuthenticationTokenFilter();
+        authenticationTokenFilter.setAuthenticationManager(authenticationManagerBean());
+        return  authenticationTokenFilter;
+    }
 
-	@Bean
-	public AuthenticationTokenFilter authenticationTokenFilterBean()
-			throws Exception {
-		AuthenticationTokenFilter authenticationTokenFilter = new AuthenticationTokenFilter();
-		authenticationTokenFilter
-				.setAuthenticationManager(authenticationManagerBean());
-		return authenticationTokenFilter;
-	}
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.headers().cacheControl().disable();
+        http.cors();
+        http
+                .csrf().disable()
+                .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
+                .authorizeRequests()
+                .antMatchers(HttpMethod.POST, "/api/users/auth")
+                    .permitAll()
+                .antMatchers(HttpMethod.POST, "/api/users")
+                    .permitAll()
+                .anyRequest().authenticated();
 
-	@Override
-	protected void configure(HttpSecurity httpSecurity) throws Exception {
-		httpSecurity.headers().cacheControl().disable();
-		httpSecurity.cors();
-		httpSecurity
-				.csrf().disable()
-				.sessionManagement()
-				.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-				.and()
-				.authorizeRequests()
-				.antMatchers(HttpMethod.POST, "/api/korisnici/auth")
-					.permitAll()
-				 /*.antMatchers(HttpMethod.GET, "/api/filmovi")
-					 .permitAll()*/
-				.anyRequest().authenticated();
+        http.addFilterBefore(authenticationTokenFilterBean(), UsernamePasswordAuthenticationFilter.class);
+    }
 
-		// Custom JWT based authentication
-		httpSecurity.addFilterBefore(authenticationTokenFilterBean(),
-				UsernamePasswordAuthenticationFilter.class);
-	}
+    @Configuration
+    public  static class WebConfig implements WebMvcConfigurer {
 
-	/*@Bean
-	CorsConfigurationSource corsConfigurationSource() {
-		CorsConfiguration configuration = new CorsConfiguration();
-		configuration.setAllowedOrigins(Arrays.asList("*"));
-		configuration.setAllowedMethods(Arrays.asList("GET","POST","OPTIONS","PUT","DELETE"));
-		configuration.setExposedHeaders(Arrays.asList("Total-Pages"));
-		configuration.setAllowCredentials(true);
-		configuration.setMaxAge(3600L);
-		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-		source.registerCorsConfiguration("/**", configuration);
-		return source;
-	}*/
-
-	@Configuration
-	public static class WebConfig implements WebMvcConfigurer {
-		@Override
-		public void addCorsMappings(CorsRegistry registry) {
-			/*registry.addMapping("/api/filmovi")
-					.allowedOrigins("https://localhost:8080", "https://localhost:3000")
-					.allowedMethods("OPTIONS", "HEAD", "GET", "PUT", "POST", "DELETE", "PATCH")
-					.allowCredentials(true)
-					.maxAge(3600);*/
-
-			registry.addMapping("/**")
-					.allowedOrigins("http://localhost:3000")
-					.allowedMethods("OPTIONS", "HEAD", "GET", "PUT", "POST", "DELETE", "PATCH")
-					.exposedHeaders("Total-Pages, Sprint-Sum")
-					.allowCredentials(true)
-					.maxAge(3600);
-		}
-	}
+        @Override
+        public void addCorsMappings(CorsRegistry registry) {
+            registry.addMapping("/**")
+                    .allowedOrigins("http://localhost:3000")
+                    .allowedMethods("OPTIONS", "HEAD", "GET", "PUT", "POST", "DELETE", "PATCH")
+                    .exposedHeaders("Total-Pages", "Sprint-Sum")
+                    .allowCredentials(true)
+                    .maxAge(3600);
+        }
+    }
 }

@@ -17,37 +17,37 @@ import java.io.IOException;
 
 public class AuthenticationTokenFilter extends UsernamePasswordAuthenticationFilter {
 
-	@Autowired
-	private TokenUtils tokenUtils;
+    @Autowired
+    private TokenUtils tokenUtils;
 
-	@Autowired
-	private UserDetailsService userDetailsService;
+    @Autowired
+    private UserDetailsService userDetailsService;
 
-	@Override
-	public void doFilter(ServletRequest request, ServletResponse response,
-			FilterChain chain) throws IOException, ServletException {
-		HttpServletRequest httpRequest = (HttpServletRequest) request;
-		String authToken = httpRequest.getHeader("Authorization");
-		if(authToken != null) {
-			if(authToken.length() > 7)
-				authToken = authToken.substring(7);
-		}
-		String username = tokenUtils.getUsernameFromToken(authToken);
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response,
+                         FilterChain chain) throws IOException, ServletException{
 
-		if (username != null
-				&& SecurityContextHolder.getContext().getAuthentication() == null) {
-			UserDetails userDetails = this.userDetailsService
-					.loadUserByUsername(username);
-			if (tokenUtils.validateToken(authToken, userDetails)) {
-				UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-						userDetails, null, userDetails.getAuthorities());
-				authentication.setDetails(
-						new WebAuthenticationDetailsSource()
-						.buildDetails(httpRequest));
-				SecurityContextHolder.getContext().setAuthentication(
-						authentication);
-			}
-		}
-		chain.doFilter(request, response);
-	}
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        String authToken = httpRequest.getHeader("Authorization");
+        if(authToken != null){
+            if(authToken.length() > 7)
+                authToken = authToken.substring(7);
+        }
+        String username = tokenUtils.getUsernameFromToken(authToken);
+
+        if(username != null && SecurityContextHolder.getContext().getAuthentication() == null){
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+            if(tokenUtils.validateToken(authToken, userDetails)){
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities()
+                );
+                authentication.setDetails(
+                        new WebAuthenticationDetailsSource()
+                        .buildDetails(httpRequest)
+                );
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+        }
+        chain.doFilter(request, response);
+    }
 }
