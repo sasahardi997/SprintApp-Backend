@@ -40,7 +40,7 @@ public class TaskController {
 	@Autowired
 	private TaskDtoToTask toTask;
 	
-	@PreAuthorize("hasAnyRole('KORISNIK', 'ADMIN')")
+	@PreAuthorize("hasAnyRole('USER', 'ADMIN')")
 	@GetMapping
 	public ResponseEntity<List<TaskDTO>> getAll(
 			@RequestParam(required = false) String name,
@@ -62,7 +62,7 @@ public class TaskController {
 		return new ResponseEntity<List<TaskDTO>>(toDto.convert(tasks.getContent()), headers, HttpStatus.OK);
 	}
 	
-	@PreAuthorize("hasAnyRole('KORISNIK', 'ADMIN')")
+	@PreAuthorize("hasAnyRole('USER', 'ADMIN')")
 	@GetMapping("/{id}")
 	public ResponseEntity<TaskDTO> getOne(@PathVariable Long id){
 		
@@ -97,7 +97,7 @@ public class TaskController {
 		return new ResponseEntity<TaskDTO>(toDto.convert(updated), HttpStatus.OK);
 	}
 	
-	@PreAuthorize("hasRole('KORISNIK')")
+	@PreAuthorize("hasRole('USER')")
 	@PutMapping(value = "/change-state/{id}")
 	public ResponseEntity<TaskDTO> update(@PathVariable Long id){
 		

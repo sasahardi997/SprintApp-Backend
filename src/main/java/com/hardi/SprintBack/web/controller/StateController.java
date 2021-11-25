@@ -26,7 +26,7 @@ public class StateController {
 	@Autowired
 	private StateToStateDTO toDto;
 	
-	@PreAuthorize("hasAnyRole('ADMIN', 'KORISNIK')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 	@GetMapping
 	public ResponseEntity<List<StateDTO>> getAll(){
 		
